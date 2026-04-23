@@ -295,12 +295,12 @@ function notifyRoomPlayers(roomCode, message, excludeWs = null) {
   }
 }
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`WebSocket server running on ws://localhost:${PORT}/ws`);
-});
-
 // SPA fallback — serve index.html for any non-API route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`WebSocket server running on ws://localhost:${PORT}/ws`);
 });
