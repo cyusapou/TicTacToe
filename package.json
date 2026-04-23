@@ -11,10 +11,9 @@
     "server:dev": "cd server && npm install && npm run dev"
   },
   "dependencies": {
-    "vue": "^3.5.24"
-  },
-  "devDependencies": {
+    "vue": "^3.5.24",
     "@vitejs/plugin-vue": "^6.0.1",
     "vite": "^7.2.4"
-  }
+  },
+  "devDependencies": {}
 }

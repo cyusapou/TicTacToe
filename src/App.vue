@@ -122,28 +122,30 @@
     </div>
 
     <div class="info">
-      <div class="player-card red">
-        <span class="player-card-label">RED · X</span>
-        <div v-if="playerColor === 'red'" class="you-badge you-badge--red">YOU</div>
-        <div v-if="isMultiplayer && playerColor === 'blue'" class="conn-badge">
-          <span :class="redConnected ? 'conn-dot conn-dot--on' : 'conn-dot conn-dot--off'"></span>
-          {{ redConnected ? 'Connected' : 'Waiting...' }}
+      <div class="score-row">
+        <div class="player-card red">
+          <span class="player-card-label">RED · X</span>
+          <div v-if="playerColor === 'red'" class="you-badge you-badge--red">YOU</div>
+          <div v-if="isMultiplayer && playerColor === 'blue'" class="conn-badge">
+            <span :class="redConnected ? 'conn-dot conn-dot--on' : 'conn-dot conn-dot--off'"></span>
+            {{ redConnected ? 'Connected' : 'Waiting...' }}
+          </div>
+          <p class="scorex">{{ countx }}</p>
         </div>
-        <p class="scorex">{{ countx }}</p>
-      </div>
 
-      <div class="msg-wrap">
-        <div class="msg">{{ msg || '···' }}</div>
-      </div>
-
-      <div class="player-card blue">
-        <span class="player-card-label">BLUE · O</span>
-        <div v-if="playerColor === 'blue'" class="you-badge you-badge--blue">YOU</div>
-        <div v-if="isMultiplayer && playerColor === 'red'" class="conn-badge">
-          <span :class="blueConnected ? 'conn-dot conn-dot--on' : 'conn-dot conn-dot--off'"></span>
-          {{ blueConnected ? 'Connected' : 'Waiting...' }}
+        <div class="msg-wrap">
+          <div class="msg">{{ msg || '···' }}</div>
         </div>
-        <p class="scoreo">{{ counto }}</p>
+
+        <div class="player-card blue">
+          <span class="player-card-label">BLUE · O</span>
+          <div v-if="playerColor === 'blue'" class="you-badge you-badge--blue">YOU</div>
+          <div v-if="isMultiplayer && playerColor === 'red'" class="conn-badge">
+            <span :class="blueConnected ? 'conn-dot conn-dot--on' : 'conn-dot conn-dot--off'"></span>
+            {{ blueConnected ? 'Connected' : 'Waiting...' }}
+          </div>
+          <p class="scoreo">{{ counto }}</p>
+        </div>
       </div>
     </div>
 
