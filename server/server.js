@@ -14,17 +14,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve frontend static files (built by Vite)
-import { fileURLToPath } from 'url';
-import path from 'path';
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// API routes below (SPA fallback at the end)
-
-// HTTP Endpoints
-
-// Create a new room
+// API routes
 app.post('/api/room/create', (req, res) => {
   try {
     const playerId = Math.random().toString(36).substr(2, 9);
@@ -41,7 +31,6 @@ app.post('/api/room/create', (req, res) => {
   }
 });
 
-// Get room info
 app.get('/api/room/:code', (req, res) => {
   try {
     const room = getRoom(req.params.code);
@@ -61,6 +50,17 @@ app.get('/api/room/:code', (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+});
+
+// Serve frontend static files (built by Vite)
+import { fileURLToPath } from 'url';
+import path from 'path';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// SPA fallback — serve index.html for any non-API route
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 // WebSocket Connections
@@ -294,11 +294,6 @@ function notifyRoomPlayers(roomCode, message, excludeWs = null) {
     room.players.blue.ws.send(JSON.stringify(message));
   }
 }
-
-// SPA fallback — serve index.html for any non-API route
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
