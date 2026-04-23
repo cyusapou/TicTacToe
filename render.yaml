@@ -1,8 +1,6 @@
 services:
   - type: static_site
     name: tictactoe
+    rootDir: .
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
-    envVars:
-      - key: NODE_ENV
-        value: production
