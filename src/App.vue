@@ -50,14 +50,17 @@
         </div>
         <p v-if="roomCode" class="room-code">
           <span class="room-code-label">Your Code</span>
-          <strong>{{ roomCode }}</strong>
+          <strong @click="copyRoomCode" class="room-code-value" title="Click to copy">{{ roomCode }}</strong>
         </p>
         <p v-if="!roomCode" class="room-code">
           <span class="room-code-label">Generating...</span>
           <strong>—</strong>
         </p>
-        <p class="waiting-text">Waiting for opponent to join</p>
-        <button @click="cancelCreate" class="btn btn-ghost">Cancel</button>
+        <p v-if="copied" class="copy-success">Copied to clipboard!</p>
+        <p class="waiting-text">Waiting for opponent to join...</p>
+        <div class="modal-buttons">
+          <button @click="cancelCreate" class="btn btn-ghost">Cancel</button>
+        </div>
       </div>
     </div>
 
@@ -217,6 +220,7 @@ const rematchPending = ref(false);
 const playerAgreedToPlayAgain = ref(false);
 const showSinglePlayerModal = ref(false);
 const aiDifficulty = ref('medium'); // 'easy' | 'medium' | 'hard'
+const copied = ref(false);
 
 // Game Variables
 let clickable = "";
@@ -287,7 +291,6 @@ function handleWebSocketMessage(message) {
         isMyTurn = false;
       }
       clickable = '';
-      showCreateModal.value = false;
       showJoinModal.value = false;
       gameMode.value = 'playing';
       resetBoard();
@@ -416,6 +419,15 @@ function cancelCreate() {
   if (ws) ws.close();
   gameMode.value = 'menu';
   roomCode.value = '';
+  copied.value = false;
+}
+
+function copyRoomCode() {
+  navigator.clipboard.writeText(roomCode.value);
+  copied.value = true;
+  setTimeout(() => {
+    copied.value = false;
+  }, 2000);
 }
 
 function cancelJoin() {

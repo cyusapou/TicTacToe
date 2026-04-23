@@ -14,13 +14,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve frontend static files (built by Vite) — must come before API routes
-import { fileURLToPath } from 'url';
-import path from 'path';
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// API routes
+// API routes (specific routes must come before static files and fallback)
 app.post('/api/room/create', (req, res) => {
   try {
     const playerId = Math.random().toString(36).substr(2, 9);
@@ -58,7 +52,13 @@ app.get('/api/room/:code', (req, res) => {
   }
 });
 
-// SPA fallback — must come after API routes and static files
+// Serve frontend static files (built by Vite)
+import { fileURLToPath } from 'url';
+import path from 'path';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// SPA fallback — serve index.html for any non-API, non-static route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
