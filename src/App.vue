@@ -187,8 +187,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 
-const SERVER_URL = 'http://localhost:3000';
-const WS_URL = 'ws://localhost:3000/ws';
+const SERVER_URL = window.location.origin;
+const WS_URL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
 
 // Game States
 let square = ref([

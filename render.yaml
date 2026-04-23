@@ -1,6 +1,10 @@
 services:
-  - type: static_site
+  # Single deployment: Server + Frontend
+  - type: web_service
     name: tictactoe
     rootDir: .
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
+    buildCommand: npm install && npm run build && cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
