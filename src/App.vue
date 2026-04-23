@@ -30,8 +30,8 @@
     </div>
 
     <div class="menu-buttons">
-      <button @click="startSinglePlayer" class="btn btn-primary">
-        <span class="btn-icon">▶</span> Single Player
+      <button @click="showSinglePlayerModal = true" class="btn btn-primary">
+        <span class="btn-icon">▸</span> Single Player
       </button>
       <div class="menu-divider"></div>
       <button @click="showCreateRoom" class="btn btn-outline">
@@ -58,6 +58,24 @@
         </p>
         <p class="waiting-text">Waiting for opponent to join</p>
         <button @click="cancelCreate" class="btn btn-ghost">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Single Player Difficulty Modal -->
+    <div v-if="showSinglePlayerModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Single Player</h2>
+          <p class="modal-subtext">Choose difficulty</p>
+        </div>
+        <div class="modal-buttons">
+          <button @click="startSinglePlayer('easy')" class="btn btn-ghost">Easy</button>
+          <button @click="startSinglePlayer('medium')" class="btn btn-primary">Medium</button>
+          <button @click="startSinglePlayer('hard')" class="btn btn-outline">Hard</button>
+        </div>
+        <div class="modal-buttons">
+          <button @click="showSinglePlayerModal = false" class="btn btn-ghost">Cancel</button>
+        </div>
       </div>
     </div>
 
@@ -97,7 +115,10 @@
           <strong>{{ roomCode }}</strong>
         </div>
       </div>
-      <button @click="exitGame" class="btn-exit">✕ EXIT</button>
+      <div class="game-header-right">
+        <button @click="resetScore" class="btn-reset" title="Reset Score">⟲ RESET</button>
+        <button @click="exitGame" class="btn-exit">✕ EXIT</button>
+      </div>
     </div>
 
     <div class="info">
@@ -192,6 +213,8 @@ const winner = ref('');
 const winningBoxes = ref([]);
 const rematchPending = ref(false);
 const playerAgreedToPlayAgain = ref(false);
+const showSinglePlayerModal = ref(false);
+const aiDifficulty = ref('medium'); // 'easy' | 'medium' | 'hard'
 
 // Game Variables
 let clickable = "";
@@ -312,12 +335,15 @@ function sendWebSocketMessage(type, data = {}) {
 }
 
 // Menu Functions
-function startSinglePlayer() {
+function startSinglePlayer(difficulty = 'medium') {
+  aiDifficulty.value = difficulty;
+  showSinglePlayerModal.value = false;
   gameType.value = 'single';
   isMultiplayer.value = false;
   playerColor.value = 'red';
   gameMode.value = 'playing';
   resetBoard();
+  msg.value = "Your turn!";
 }
 
 async function showCreateRoom() {
@@ -396,6 +422,15 @@ function cancelJoin() {
   joinError.value = '';
 }
 
+function resetScore() {
+  countx.value = 0;
+  counto.value = 0;
+  msg.value = 'Score reset!';
+  setTimeout(() => {
+    msg.value = '';
+  }, 2000);
+}
+
 function exitGame() {
   if (ws) ws.close();
   gameMode.value = 'menu';
@@ -415,16 +450,124 @@ function play(index) {
 
 function playSinglePlayer(index) {
   if (square.value[index].cont !== "") return;
+  if (clickable === 'none') return;
 
+  // Human is always X (Red)
+  square.value[index].cont = x;
   turn++;
+  checkWinCondition();
 
-  if (turn % 2 === 0) {
-    square.value[index].cont = x;
-  } else {
-    square.value[index].cont = o;
+  // If game ended, don't let AI move
+  if (winner.value || turn === 9) return;
+
+  // Let AI make a move after a short delay
+  clickable = 'none';
+  msg.value = 'Computer is thinking...';
+  setTimeout(() => {
+    const move = computeAIMove(aiDifficulty.value);
+    if (move != null) {
+      square.value[move].cont = o;
+      turn++;
+      checkWinCondition();
+    }
+    if (!winner.value) {
+      msg.value = 'Your turn!';
+      clickable = '';
+    }
+  }, 350);
+}
+
+// AI helpers
+function boardArrayFromSquare(sq) {
+  // returns array of 'X', 'O', or ''
+  return sq.map(cell => {
+    if (cell.cont === x) return 'X';
+    if (cell.cont === o) return 'O';
+    return '';
+  });
+}
+
+function availableMovesFromBoard(board) {
+  const moves = [];
+  board.forEach((v, i) => { if (!v) moves.push(i); });
+  return moves;
+}
+
+function computeAIMove(difficulty) {
+  const board = boardArrayFromSquare(square.value);
+  const moves = availableMovesFromBoard(board);
+  if (moves.length === 0) return null;
+
+  if (difficulty === 'easy') {
+    // random move
+    return moves[Math.floor(Math.random() * moves.length)];
   }
 
-  checkWinCondition();
+  // medium: win if possible, block if necessary, else prefer center/corners/random
+  if (difficulty === 'medium') {
+    // try to win
+    for (const m of moves) {
+      const copy = board.slice(); copy[m] = 'O';
+      if (checkBoardWinner(copy) === 'O') return m;
+    }
+    // try to block
+    for (const m of moves) {
+      const copy = board.slice(); copy[m] = 'X';
+      if (checkBoardWinner(copy) === 'X') return m;
+    }
+    // prefer center
+    if (moves.includes(4)) return 4;
+    // prefer corners
+    const corners = [0,2,6,8].filter(i => moves.includes(i));
+    if (corners.length) return corners[Math.floor(Math.random() * corners.length)];
+    // fallback random
+    return moves[Math.floor(Math.random() * moves.length)];
+  }
+
+  // hard: minimax
+  const best = minimax(board, true, 0);
+  return best.move;
+}
+
+function checkBoardWinner(bd) {
+  const lines = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  for (const [a,b,c] of lines) {
+    if (bd[a] && bd[a] === bd[b] && bd[a] === bd[c]) return bd[a];
+  }
+  if (bd.every(Boolean)) return 'Tie';
+  return null;
+}
+
+function minimax(bd, isAiTurn, depth) {
+  const winnerMark = checkBoardWinner(bd);
+  if (winnerMark === 'O') return { score: 10 - depth };
+  if (winnerMark === 'X') return { score: depth - 10 };
+  if (winnerMark === 'Tie') return { score: 0 };
+
+  const moves = availableMovesFromBoard(bd);
+  let bestMove = null;
+
+  if (isAiTurn) {
+    let bestScore = -Infinity;
+    for (const m of moves) {
+      const copy = bd.slice(); copy[m] = 'O';
+      const result = minimax(copy, false, depth+1);
+      if (result.score > bestScore) { bestScore = result.score; bestMove = m; }
+    }
+    return { score: bestScore, move: bestMove };
+  } else {
+    let bestScore = Infinity;
+    for (const m of moves) {
+      const copy = bd.slice(); copy[m] = 'X';
+      const result = minimax(copy, true, depth+1);
+      if (result.score < bestScore) { bestScore = result.score; bestMove = m; }
+    }
+    return { score: bestScore, move: bestMove };
+  }
 }
 
 function playMultiplayer(index) {
